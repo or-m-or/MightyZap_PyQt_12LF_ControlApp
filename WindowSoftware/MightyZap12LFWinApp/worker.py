@@ -1,4 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal
+from config import setup_logger
+
+_logger = setup_logger(name="TestWorker", level='DEBUG')
 
 class TestWorker(QThread):
     """ 테스트 실행 워커 """
