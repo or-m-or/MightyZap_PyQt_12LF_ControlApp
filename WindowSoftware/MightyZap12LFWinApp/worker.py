@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 
 class TestWorker(QThread):
+    """ 테스트 실행 워커 """
     test_complete = pyqtSignal()  # 테스트 완료 시그널
 
     def __init__(self, actuator, position1, position2, push_counts):

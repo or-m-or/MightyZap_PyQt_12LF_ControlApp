@@ -7,9 +7,11 @@ import serial
 from serial.tools import list_ports
 from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtCore import QTimer
 from actuator import Actuator
 from position import PositionUpdater
 from worker import TestWorker
+from default import DEFAULT_VALUES
 
 
 class ActuatorControlApp(QDialog):
@@ -21,13 +23,19 @@ class ActuatorControlApp(QDialog):
         self.actuators = []   # 액추에이터 리스트
         self.actuator_ui_map = {}  # 액추에이터와 UI 매핑
         self.workers = {}  # 액추에이터별 작업자(QThread) 관리
-        self.is_testing = False  # 테스트 실행 상태 플래그
-        self.position_updater = None  # 설정 화면 액추에이터 실시간 위치 업데이트를 위한 쓰레드
+        # self.is_testing = False  # 테스트 실행 상태 플래그
+        # self.position_updater = None  # 설정 화면 액추에이터 실시간 위치 업데이트를 위한 쓰레드
         self.position1 = 0    # 포지션 1
         self.position2 = 0    # 포지션 2
-        self.push_counts = 0  # 왕복 횟수
+        self.push_counts = 5  # 왕복 횟수
         self._initialize_ui() # UI 피처 초기화
-        self.ui.TabWidget.currentChanged.connect(self.on_tab_changed) # TabWidget 탭 변경 시그널 연결
+        # self.ui.TabWidget.currentChanged.connect(self.on_tab_changed) # TabWidget 탭 변경 시그널 연결
+        
+        # self.serial_ports = {}
+        self.test_counts = {}
+        self.timer = QTimer(self)  # 시리얼 데이터 모니터링 타이머
+        self.timer.timeout.connect(self.monitor_serial_data)
+        self.timer.start(100)
         
         print("[디버깅] UI 초기화 완료")
         self.ui.show()        
@@ -42,6 +50,19 @@ class ActuatorControlApp(QDialog):
         self.ui.SearchPushBtn.clicked.connect(self.display_serial_ports)
         self.ui.ConnectPushBtn.clicked.connect(self.setup_board_connect)
         self.ui.DisconnectPushBtn.clicked.connect(self.setup_board_disconnect)
+        
+        # 기타 서보 설정
+        self.ui.SpeedLimitLineEdit.setPlaceholderText(str(DEFAULT_VALUES["speed_limit"]))
+        self.ui.SpeedTempLineEdit.setPlaceholderText(str(DEFAULT_VALUES["speed"]))
+        self.ui.CurrentLimitLineEdit.setPlaceholderText(str(DEFAULT_VALUES["current_limit"]))
+        self.ui.CurrentTempLineEdit.setPlaceholderText(str(DEFAULT_VALUES["current"]))
+        self.ui.BWDLimitLineEdit.setPlaceholderText(str(DEFAULT_VALUES["short_limit"]))
+        self.ui.FWDLimitLineEdit.setPlaceholderText(str(DEFAULT_VALUES["long_limit"]))
+        self.ui.AccLineEdit.setPlaceholderText(str(DEFAULT_VALUES["accel"]))
+        self.ui.DecLineEdit.setPlaceholderText(str(DEFAULT_VALUES["decel"]))
+        
+        self.ui.ActuatorSaveBtn.clicked.connect(self.save_all_settings)
+        self.ui.ActuatorResetBtn.clicked.connect(self.reset_to_defaults)
         
         # JOG 설정
         self.ui.HomePushBtn.clicked.connect(self.actuator_home)
@@ -103,18 +124,18 @@ class ActuatorControlApp(QDialog):
                 self.create_actuator_ui(actuator)
             print(f"[디버깅] 포트 {port} 연결 성공")
             
-            # PositionUpdater 쓰레드 초기화 및 시작
-            if not self.position_updater:
-                print("[디버깅] PositionUpdater 쓰레드 초기화")
-                self.position_updater = PositionUpdater(self.actuators)
-                self.position_updater.position_updated.connect(self._update_jogloc_label)
-                self.position_updater.start()
-                print("[디버깅] PositionUpdater 쓰레드 시작")
+            # # PositionUpdater 쓰레드 초기화 및 시작
+            # if not self.position_updater:
+            #     print("[디버깅] PositionUpdater 쓰레드 초기화")
+            #     self.position_updater = PositionUpdater(self.actuators)
+            #     self.position_updater.position_updated.connect(self._update_jogloc_label)
+            #     self.position_updater.start()
+            #     print("[디버깅] PositionUpdater 쓰레드 시작")
             
-            # 대상 포트를 강제로 설정
-            if self.position_updater:
-                print(f"[디버깅] PositionUpdater 대상 포트 설정: {port}")
-                self.position_updater.set_target_port(port)
+            # # 대상 포트를 강제로 설정
+            # if self.position_updater:
+            #     print(f"[디버깅] PositionUpdater 대상 포트 설정: {port}")
+            #     self.position_updater.set_target_port(port)
             
             # 액추에이터 초기 위치 설정
             print(f"[디버깅] 액추에이터 {actuator.servo_id} 초기 위치 설정: 0")
@@ -144,53 +165,44 @@ class ActuatorControlApp(QDialog):
         print(f"[디버깅] 선택된 보드 변경: {selected_port}")
         if not selected_port:  # 선택된 보드가 없을 경우
             self.ui.JoglocLabel.setText("board is not connected")
-            if self.position_updater:
-                print("[디버깅] PositionUpdater 대상 포트 해제")
-                self.position_updater.set_target_port(None)
-        else:
-            if self.position_updater:
-                print(f"[디버깅] PositionUpdater 대상 포트 설정: {selected_port}")
-                self.position_updater.set_target_port(selected_port)
+        #     if self.position_updater:
+        #         print("[디버깅] PositionUpdater 대상 포트 해제")
+        #         self.position_updater.set_target_port(None)
+        # else:
+        #     if self.position_updater:
+        #         print(f"[디버깅] PositionUpdater 대상 포트 설정: {selected_port}")
+        #         self.position_updater.set_target_port(selected_port)
 
+    # def _update_jogloc_label(self, position):
+    #     """ JoglocLabel에 현재 위치 표시 """
+    #     print(f"[디버깅] JoglocLabel 업데이트: {position}")
+    #     if position is not None:
+    #         # 1자리 단위로 내림 처리
+    #         rounded_position = position // 10 * 10
+    #         print(f"[디버깅] 내림 처리된 위치: {rounded_position}")
+    #         self.ui.JoglocLabel.setText(f"{rounded_position}")
+    #     else:
+    #         self.ui.JoglocLabel.setText("board is not connected")
+    
     def _update_jogloc_label(self, position):
         """ JoglocLabel에 현재 위치 표시 """
-        print(f"[디버깅] JoglocLabel 업데이트: {position}")
-        if position is not None:
-            # 1자리 단위로 내림 처리
-            rounded_position = position // 10 * 10
-            print(f"[디버깅] 내림 처리된 위치: {rounded_position}")
-            self.ui.JoglocLabel.setText(f"{rounded_position}")
-        else:
-            self.ui.JoglocLabel.setText("board is not connected")
-
+        self.ui.JoglocLabel.setText(f"{position // 10 * 10}" if position is not None else "board is not connected")
             
-    def on_tab_changed(self, index):
-        """탭 변경 시 호출"""
-        current_tab_name = self.ui.TabWidget.tabText(index)
-        print(f"[디버깅] 탭 변경: {current_tab_name} ({index})")
+    # def on_tab_changed(self, index):
+    #     """탭 변경 시 호출"""
+    #     current_tab_name = self.ui.TabWidget.tabText(index)
+    #     print(f"[디버깅] 탭 변경: {current_tab_name} ({index})")
 
-        if current_tab_name == "Setup":
-            # Setup 탭일 때 위치 측정 쓰레드 동작
-            if self.position_updater:
-                print("[디버깅] 위치 측정 쓰레드 재시작")
-                self.position_updater.start()
-        else:
-            # 다른 탭일 때 위치 측정 쓰레드 중지
-            if self.position_updater and self.position_updater.isRunning():
-                print("[디버깅] 위치 측정 쓰레드 중지")
-                self.position_updater.stop()
-
-                             
-    def actuator_home(self):
-        """ 액추에이터를 원점으로 이동 """
-        print("[디버깅] 액추에이터 원점 이동 시도")
-        selected_port = self.ui.BoardComboBox.currentText()
-        actuator = next((act for act in self.actuators if act.port == selected_port), None)
-        if actuator:
-            print(f"[디버깅] 포트 {selected_port}의 액추에이터 원점 이동 명령 전송")
-            actuator.send_command(f"SET_POSITION {actuator.servo_id} 0")
-            # self._update_jogloc_label()
-            # QMessageBox.information(self, "Alert", f"Actuator {actuator.servo_id} moved to home position.")
+    #     if current_tab_name == "Setup":
+    #         # Setup 탭일 때 위치 측정 쓰레드 동작
+    #         if self.position_updater:
+    #             print("[디버깅] 위치 측정 쓰레드 재시작")
+    #             self.position_updater.start()
+    #     else:
+    #         # 다른 탭일 때 위치 측정 쓰레드 중지
+    #         if self.position_updater and self.position_updater.isRunning():
+    #             print("[디버깅] 위치 측정 쓰레드 중지")
+    #             self.position_updater.stop()
 
     def _get_position(self, actuator):
         """ 지정된 액추에이터의 현재 위치 가져오기 """
@@ -205,43 +217,97 @@ class ActuatorControlApp(QDialog):
                     return None
         print("[디버깅] 액추에이터가 열려 있지 않음 또는 잘못된 액추에이터")
         return None
+                     
+    # def actuator_home(self):
+    #     """ 액추에이터를 원점으로 이동 """
+    #     print("[디버깅] 액추에이터 원점 이동 시도")
+    #     selected_port = self.ui.BoardComboBox.currentText()
+    #     actuator = next((act for act in self.actuators if act.port == selected_port), None)
+    #     if actuator:
+    #         print(f"[디버깅] 포트 {selected_port}의 액추에이터 원점 이동 명령 전송")
+    #         actuator.send_command(f"SET_POSITION {actuator.servo_id} 0")
 
+    def actuator_home(self):
+        """액추에이터를 원점으로 이동"""
+        print("[디버깅] 액추에이터 원점 이동 시도")
+        selected_port = self.ui.BoardComboBox.currentText()
+        actuator = self._get_actuator_by_port(selected_port)
+        if actuator:
+            actuator.send_command(f"SET_POSITION {actuator.servo_id} 0")
+            updated_position = self._get_position(actuator)  # 위치 업데이트
+            self._update_jogloc_label(updated_position)  # Label에 업데이트
+        else:
+            print("[디버깅] 선택된 액추에이터 없음")
+    
+
+    # def actuator_fwd(self):
+    #     """ 액추에이터 위치 증가 """
+    #     print("[디버깅] 액추에이터 위치 증가 시도")
+    #     if self.position_updater and self.position_updater.isRunning():
+    #         self.position_updater.stop()
+    #     try:
+    #         selected_port = self.ui.BoardComboBox.currentText()
+    #         actuator = next((act for act in self.actuators if act.port == selected_port), None)
+    #         if actuator:
+    #             current_position = self._get_position(actuator)
+    #             if current_position is not None:
+    #                 temp = int(current_position) + 300 # 설정값 100 (추후 수정가능하게 변경)
+    #                 new_position = temp if temp <= 4090 else 4090  
+    #                 print(f"[디버깅] 포트 {selected_port}의 액추에이터 위치 증가. 새 위치: {new_position}")
+    #                 actuator.send_command(f"SET_POSITION {actuator.servo_id} {new_position}")
+    #             # self._update_jogloc_label()
+    #             # QMessageBox.information(self, "Alert", f"Actuator {actuator.servo_id} moved forward.")
+    #         else:
+    #             print("[디버깅] 선택된 액추에이터 없음")
+    #     finally:
+    #         if self.position_updater:
+    #             self.position_updater.start()
     
     def actuator_fwd(self):
-        """ 액추에이터 위치 증가 """
+        """액추에이터 위치 증가"""
         print("[디버깅] 액추에이터 위치 증가 시도")
         selected_port = self.ui.BoardComboBox.currentText()
-        actuator = next((act for act in self.actuators if act.port == selected_port), None)
+        actuator = self._get_actuator_by_port(selected_port)
         if actuator:
             current_position = self._get_position(actuator)
             if current_position is not None:
-                temp = int(current_position) + 300 # 설정값 100 (추후 수정가능하게 변경)
-                new_position = temp if temp <= 4090 else 4090  
-                print(f"[디버깅] 포트 {selected_port}의 액추에이터 위치 증가. 새 위치: {new_position}")
+                new_position = min(current_position + 300, DEFAULT_VALUES["long_limit"])
                 actuator.send_command(f"SET_POSITION {actuator.servo_id} {new_position}")
-            # self._update_jogloc_label()
-            # QMessageBox.information(self, "Alert", f"Actuator {actuator.servo_id} moved forward.")
+                updated_position = self._get_position(actuator)  # 위치 업데이트
+                self._update_jogloc_label(updated_position)  # Label에 업데이트
         else:
             print("[디버깅] 선택된 액추에이터 없음")
             
 
+    # def actuator_bwd(self):
+    #     """ 액추에이터 위치 감소 """
+    #     print("[디버깅] 액추에이터 위치 감소 시도")
+    #     selected_port = self.ui.BoardComboBox.currentText()
+    #     actuator = next((act for act in self.actuators if act.port == selected_port), None)
+    #     if actuator:
+    #         current_position = self._get_position(actuator)
+    #         if current_position is not None:
+    #             temp = int(current_position) - 300
+    #             new_position = temp if temp >= 1 else 0             
+    #             print(f"[디버깅] 포트 {selected_port}의 액추에이터 위치 감소. 새 위치: {new_position}")
+    #             actuator.send_command(f"SET_POSITION {actuator.servo_id} {new_position}")
+    #     else:
+    #         print("[디버깅] 선택된 액추에이터 없음")
+
     def actuator_bwd(self):
-        """ 액추에이터 위치 감소 """
+        """액추에이터 위치 감소"""
         print("[디버깅] 액추에이터 위치 감소 시도")
         selected_port = self.ui.BoardComboBox.currentText()
-        actuator = next((act for act in self.actuators if act.port == selected_port), None)
+        actuator = self._get_actuator_by_port(selected_port)
         if actuator:
             current_position = self._get_position(actuator)
             if current_position is not None:
-                temp = int(current_position) - 300
-                new_position = temp if temp >= 1 else 0             
-                print(f"[디버깅] 포트 {selected_port}의 액추에이터 위치 감소. 새 위치: {new_position}")
+                new_position = max(current_position - 300, DEFAULT_VALUES["short_limit"])
                 actuator.send_command(f"SET_POSITION {actuator.servo_id} {new_position}")
-            # self._update_jogloc_label()
-            # QMessageBox.information(self, "Alert", f"Actuator {actuator.servo_id} moved backward.")
+                updated_position = self._get_position(actuator)  # 위치 업데이트
+                self._update_jogloc_label(updated_position)  # Label에 업데이트
         else:
-            print("[디버깅] 선택된 액추에이터 없음")
-    
+            print("[디버깅] 선택된 액추에이터 없음")    
 
     def save_setup(self):
         """설정 저장"""
@@ -295,6 +361,32 @@ class ActuatorControlApp(QDialog):
             "reset_btn": reset_btn,
         }
 
+    def monitor_serial_data(self):
+        """아두이노에서 오는 시리얼 데이터 처리"""
+        # print('[시리얼 모니터링]--')
+        for actuator in self.actuators:
+            serial_obj = actuator.serial_obj  # Actuator 객체에서 시리얼 객체 가져오기
+            if serial_obj and serial_obj.is_open:
+                # print(f"[시리얼 모니터링] Actuator {actuator.port} 상태 확인 중")
+                if serial_obj.in_waiting > 0:
+                    command = serial_obj.readline().strip().decode()
+                    # print(f"[DEBUG] {actuator.port}: 수신된 명령어 -> {command}")
+                    if command == "TEST":
+                        # label 가져와 테스트 실행
+                        if actuator in self.actuator_ui_map:
+                            label = self.actuator_ui_map[actuator]["complete_count_label"]
+                            # print(f"[DEBUG] {actuator.port}: label 확인 완료")
+                            self.timer.stop()
+                            self.test_start(actuator, label)
+                            self.timer.start(100)
+                        else:
+                            print(f"[ERROR] {actuator.port}: UI 매핑된 label이 없습니다.")
+                    else:
+                        print(f"[DEBUG] {actuator.port}: 알 수 없는 명령어 -> {command}")
+            else:
+                print(f"[WARN] Actuator {actuator.port}의 시리얼 객체가 닫혀 있습니다.")
+
+
     
     def test_start(self, actuator, label):
         """테스트 시작"""
@@ -343,6 +435,82 @@ class ActuatorControlApp(QDialog):
         """프로그램 종료"""
         self.close()
         sys.exit(app.exec())
+        
+        
+    def _get_actuator_by_port(self, port):
+        """현재 선택된 포트에 해당하는 액추에이터 반환"""
+        return next((act for act in self.actuators if act.port == port), None)
+    
+    def save_all_settings(self):
+        """LineEdit 값 읽고 설정 저장 (빈칸일 경우 기본값 사용)"""
+        selected_port = self.ui.BoardComboBox.currentText()
+        actuator = self._get_actuator_by_port(selected_port)
+        if not actuator:
+            QMessageBox.warning(self, "Alert", "No actuator selected or connected.")
+            return
+
+        try:
+            # LineEdit에서 값 읽기 (빈칸이면 DEFAULT_VALUES 사용)
+            speed_limit = self.ui.SpeedLimitLineEdit.text() or DEFAULT_VALUES["speed_limit"]
+            speed = self.ui.SpeedTempLineEdit.text() or DEFAULT_VALUES["speed"]
+            current_limit = self.ui.CurrentLimitLineEdit.text() or DEFAULT_VALUES["current_limit"]
+            current = self.ui.CurrentTempLineEdit.text() or DEFAULT_VALUES["current"]
+            short_limit = self.ui.BWDLimitLineEdit.text() or DEFAULT_VALUES["short_limit"]
+            long_limit = self.ui.FWDLimitLineEdit.text() or DEFAULT_VALUES["long_limit"]
+            accel = self.ui.AccLineEdit.text() or DEFAULT_VALUES["accel"]
+            decel = self.ui.DecLineEdit.text() or DEFAULT_VALUES["decel"]
+
+            # 명령어 전송
+            actuator.send_command(f"SET_SPEEDLIMIT {actuator.servo_id} {speed_limit}")
+            actuator.send_command(f"SET_SPEED {actuator.servo_id} {speed}")
+            actuator.send_command(f"SET_CURRENTLIMIT {actuator.servo_id} {current_limit}")
+            actuator.send_command(f"SET_CURRENT {actuator.servo_id} {current}")
+            actuator.send_command(f"SET_SHORTLIMIT {actuator.servo_id} {short_limit}")
+            actuator.send_command(f"SET_LONGLIMIT {actuator.servo_id} {long_limit}")
+            actuator.send_command(f"SET_ACCEL {actuator.servo_id} {accel}")
+            actuator.send_command(f"SET_DECEL {actuator.servo_id} {decel}")
+
+            QMessageBox.information(self, "Info", "All settings have been saved successfully!")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save settings: {e}")
+
+
+
+    def reset_to_defaults(self):
+        """기본값으로 초기화"""
+        selected_port = self.ui.BoardComboBox.currentText()
+        # actuator = self._get_actuator_by_port(selected_port)
+        actuator = next((act for act in self.actuators if act.port == selected_port), None)
+        if not actuator:
+            QMessageBox.warning(self, "Alert", "No actuator selected or connected.")
+            return
+
+        try:
+            # DEFAULT_VALUES 사용하여 LineEdit 초기화
+            self.ui.SpeedLimitLineEdit.setText(str(DEFAULT_VALUES["speed_limit"]))
+            self.ui.SpeedTempLineEdit.setText(str(DEFAULT_VALUES["speed"]))
+            self.ui.CurrentLimitLineEdit.setText(str(DEFAULT_VALUES["current_limit"]))
+            self.ui.CurrentTempLineEdit.setText(str(DEFAULT_VALUES["current"]))
+            self.ui.BWDLimitLineEdit.setText(str(DEFAULT_VALUES["short_limit"]))
+            self.ui.FWDLimitLineEdit.setText(str(DEFAULT_VALUES["long_limit"]))
+            self.ui.AccLineEdit.setText(str(DEFAULT_VALUES["accel"]))
+            self.ui.DecLineEdit.setText(str(DEFAULT_VALUES["decel"]))
+            
+            # DEFAULT_VALUES 사용하여 초기화
+            actuator.send_command(f"SET_SPEEDLIMIT {actuator.servo_id} {DEFAULT_VALUES['speed_limit']}")
+            actuator.send_command(f"SET_SPEED {actuator.servo_id} {DEFAULT_VALUES['speed']}")
+            actuator.send_command(f"SET_CURRENTLIMIT {actuator.servo_id} {DEFAULT_VALUES['current_limit']}")
+            actuator.send_command(f"SET_CURRENT {actuator.servo_id} {DEFAULT_VALUES['current']}")
+            actuator.send_command(f"SET_SHORTLIMIT {actuator.servo_id} {DEFAULT_VALUES['short_limit']}")
+            actuator.send_command(f"SET_LONGLIMIT {actuator.servo_id} {DEFAULT_VALUES['long_limit']}")
+            actuator.send_command(f"SET_ACCEL {actuator.servo_id} {DEFAULT_VALUES['accel']}")
+            actuator.send_command(f"SET_DECEL {actuator.servo_id} {DEFAULT_VALUES['decel']}")
+
+            
+            QMessageBox.information(self, "Info", "All settings have been reset to defaults!")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to reset settings: {e}")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

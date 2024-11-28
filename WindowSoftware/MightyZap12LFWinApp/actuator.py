@@ -17,5 +17,10 @@ class Actuator:
             time.sleep(0.1)
             if expect_response:
                 response = self.serial_obj.readline()
-                return response[:len(response) - 1].decode().strip()
+                if response:
+                    try:
+                        return response.strip().decode()
+                    except UnicodeDecodeError:
+                        print("[디버깅] 응답 디코딩 실패")
+                        return None
         return None
