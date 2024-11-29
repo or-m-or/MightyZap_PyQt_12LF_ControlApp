@@ -1,0 +1,34 @@
+{
+    "Update": {
+        "CheckUpdateAtStartUp": true
+    },
+    "DesktopLyric": {
+        "Alignment": "Center",
+        "FontFamily": "Microsoft YaHei",
+        "FontSize": 50,
+        "HighlightColor": "#ff0099bc",
+        "StrokeColor": "#ff000000",
+        "StrokeSize": 5
+    },
+    "Folders": {
+        "Download": "C:/Users/htth8/project/PyQt-Fluent-Widgets-master/PyQt-Fluent-Widgets-master/examples/window/settings/download",
+        "LocalMusic": []
+    },
+    "MainWindow": {
+        "DpiScale": 1,
+        "EnableAcrylicBackground": false,
+        "Language": "Auto",
+        "MinimizeToTray": true,
+        "PlayBarColor": "#ff225c7f",
+        "RecentPlayNumbers": 300
+    },
+    "Online": {
+        "MvQuality": "Full HD",
+        "PageSize": 26,
+        "SongQuality": "Standard quality"
+    },
+    "QFluentWidgets": {
+        "ThemeColor": "#ff508f32",
+        "ThemeMode": "Light"
+    }
+}

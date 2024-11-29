@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\Software\MightyZap_IC10_Controller]
+"InstallPath"="C:\\Program Files\\MightyZap_IC10_Controller"
+"Version"="1.0.0"
+"Publisher"="Yong Control"
+
+[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\<YourAppName>]
+"DisplayName"="MightyZap_IC10_Controller"
+"UninstallString"="C:\\Program Files\\MightyZap_IC10_Controller\\uninstall.exe"
+"InstallLocation"="C:\\Program Files\\MightyZap_IC10_Controller"
+"DisplayVersion"="1.0.0"
