@@ -1,23 +1,37 @@
 #include <MightyZap.h>
+
 #define RS485_PIN 2
-#define SERVO_ID_1 1
-#define SERVO_ID_2 2
+#define SERVO_ID 0
+#define SWITCH_PIN 10
+#define TEST_CMD "TEST"
 
-MightyZap m_zap(&Serial1, RS485_PIN); // RS485 통신을 위한 MightyZap 객체 생성 (통신설정)
+MightyZap m_zap(&Serial1, RS485_PIN);
+bool test_triggered = false; // 테스트 트리거 상태 플래그
 
-/* 초기 실행 (첫 전원공급 시, 리셋 버튼 누를 시 실행) */
+
 void setup() {
-  Serial.begin(9600); // 시리얼 모니터 초기화
-  m_zap.begin(32);    // MightyZap 통신 속도 초기화 
-  // (128: 9600 baudrate, 64: 19200 baudrate, 32: 57600 baudrate, 16: 115200 baudrate)
-
-  // 액추에이터 위치 0 지점으로 초기화
-  m_zap.GoalPosition(SERVO_ID_1, 0); 
-  m_zap.GoalPosition(SERVO_ID_2, 0);
+  Serial.begin(9600);
+  pinMode(SWITCH_PIN, INPUT_PULLUP);
+  m_zap.begin(32);    // MightyZap-액추에이터간 통신 속도 (128: 9600 baud, 64: 19200 baud, 32: 57600 baud, 16: 115200 baud)
+  m_zap.GoalPosition(SERVO_ID, 0); // 액추에이터 위치 0으로 초기화
+  while (!Serial);
 }
 
+
 void loop() {
-  // 시리얼 데이터 수신 대기, handleCommand()으로 명령어 전달
+  // 스위치 누르면 테스트 명령 전송
+  if (digitalRead(SWITCH_PIN) == LOW && !test_triggered) {
+    test_triggered = true;
+    Serial.println(TEST_CMD); // 시리얼 테스트 명령어 전송
+    delay(100);
+  }
+
+  // 스위치 안누르면 트리거 상태 초기화
+  if (digitalRead(SWITCH_PIN) == HIGH) {
+    test_triggered = false;
+  }
+
+  // 시리얼 명령 수신 대기
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();       
@@ -55,33 +69,74 @@ void parseCommand(String command) {
   } else if (cmd == "GET_MOVING") {
     int state = m_zap.Moving(id);
     Serial.println(state);
+  } else if (cmd == "GET_MODEL") {
+    Serial.println(id);
+    Serial.println(m_zap.getModelNumber(id));
+  } else if (cmd == "GET_INFO") {
+    // Speed Limit 속도 제한값
+    Serial.print("SPL ");
+    Serial.print(m_zap.readint(id, 0x15));
+    Serial.print(",");
+
+    // Current Limit 전류 제한값
+    Serial.print("CRL ");
+    Serial.print(m_zap.readint(id, 0x34));
+    Serial.print(",");
+
+    // Short Stroke Limit 최소 위치 한계값
+    Serial.print("SSL ");
+    Serial.print(m_zap.readint(id, 0x06)); 
+    Serial.print(",");
+
+    // Long Stroke Limit 최대 위치 한계값
+    Serial.print("LSL ");
+    Serial.print(m_zap.readint(id, 0x08));
+    Serial.print(",");
+
+    // Acceleration Ratio 가속률
+    Serial.print("ACC ");
+    Serial.print(m_zap.readByte(id, 0x21));
+    Serial.print(",");
+
+    // Deceleration Ratio 감속률
+    Serial.print("DEC ");
+    Serial.print(m_zap.readByte(id, 0x22));
+    Serial.print(",");
   }
   
   
   int param = paramStr.toInt();
   if (cmd == "SET_POSITION") {
     m_zap.GoalPosition(id, param);
-    Serial.println("Position set to: " + String(param));
+    // Serial.println(param);  
   } else if (cmd == "SET_SPEEDLIMIT") {
     m_zap.SpeedLimit(id, param);
+    // Serial.println(param);
   } else if (cmd == "SET_SPEED") {
     m_zap.GoalSpeed(id, param); // 빈번한 변경 시 사용
+    // Serial.println(param);
   } else if (cmd == "SET_CURRENTLIMIT") {
     m_zap.CurrentLimit(id, param);
+    // Serial.println(param);
   } else if (cmd == "SET_CURRENT") {
     m_zap.GoalCurrent(id, param); // 빈번한 변경 시 사용
+    // Serial.println(param);
   } else if (cmd == "SET_SHORTLIMIT") {
     m_zap.ShortStrokeLimit(id, param);
+    // Serial.println(param);
   } else if (cmd == "SET_LONGLIMIT") {
     m_zap.LongStrokeLimit(id, param);
+    // Serial.println(param);
   } else if (cmd == "SET_ACCEL") {
     m_zap.Acceleration(id, param);
+    // Serial.println(param);
   } else if (cmd == "SET_DECEL") {
     m_zap.Deceleration(id, param);
+    // Serial.println(param);
   } else if (cmd == "SET_FORCE") {
     m_zap.forceEnable(id, param);
+    // Serial.println(param);
   }
-  
 }
 
 
