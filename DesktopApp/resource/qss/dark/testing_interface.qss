@@ -1,0 +1,57 @@
+/* Testing Interface main background */
+TestingInterface, #scrollWidget {
+    background-color: #2d2d2d;
+}
+
+/* ScrollArea styling */
+QScrollArea {
+    border: none;
+    background-color: #2d2d2d;
+}
+
+/* Label styling */
+QLabel#testLabel {
+    font: 33px 'Microsoft YaHei Light';
+    background-color: transparent;
+    color: white; /* 다크 모드에서 라벨 텍스트 색상 */
+}
+
+/* Group card styling */
+QWidget#PortSelectionGroup, QWidget#TemplateGroup {
+    background-color: #333333; /* 다크 모드 배경 */
+    border: 1px solid #444444;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* 테스트 카드 (Test Card) */
+QWidget#TestCard {
+    background-color: #444444; /* 카드 배경 */
+    border: 1px solid #555555;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+/* 테스트 카드 라벨 */
+QWidget#TestCard QLabel {
+    font: 18px 'Microsoft YaHei';
+    color: white;
+    padding: 5px 0;
+}
+
+/* 테스트 카드 버튼 */
+QWidget#TestCard QPushButton {
+    background-color: #555555;
+    color: white;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font: 14px 'Microsoft YaHei';
+}
+
+QWidget#TestCard QPushButton:hover {
+    background-color: #777777;
+}
+
+QWidget#TestCard QPushButton:pressed {
+    background-color: #444444;
+}
