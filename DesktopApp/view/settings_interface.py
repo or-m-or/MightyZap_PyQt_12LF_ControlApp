@@ -43,10 +43,10 @@ class SettingInterface(ScrollArea):
         self.expandLayout.setContentsMargins(20, 40, 20, 20)   # 전체 여백 설정
         
          # "설정" 라벨
-        self.settingLabel = QLabel(self.tr("Setup"), self.scrollWidget) 
-        self.settingLabel.setObjectName('settingLabel')  # QSS 적용을 위해 ObjectName 설정
-        self.settingLabel.setFixedHeight(50)                                # 높이 지정으로 글자 잘림 방지
-        self.expandLayout.addWidget(self.settingLabel)   # 라벨을 스크롤 레이아웃에 추가
+        self.settingLabel = QLabel(self.tr("Setup"), self) # .scrollWidget
+        # self.settingLabel.setObjectName('settingLabel')  # QSS 적용을 위해 ObjectName 설정
+        # self.settingLabel.setFixedHeight(50)               # 높이 지정으로 글자 잘림 방지
+        # self.expandLayout.addWidget(self.settingLabel)   # 라벨을 스크롤 레이아웃에 추가
         
         # [ 보드 설정 그룹 ] 초기화
         self.BoardSettingGroup = SettingCardGroup( self.tr("Board Setting"), self.scrollWidget )
@@ -168,9 +168,19 @@ class SettingInterface(ScrollArea):
         )
         self.__addCustomSpinBoxCard(card=self.fwdLimitSettingCard, limit=4095)
         
+        # [ 초기화 ]
+        self.DangerGroup = SettingCardGroup(self.tr('Danger'), self.scrollWidget)
+        self.resetButtonCard = PrimaryPushSettingCard(
+            text=self.tr("Reset"),
+            icon=FIF.ROTATE,
+            title=self.tr("Reset All Settings"),
+            content=self.tr("This will reset all settings to their default values."),
+            parent=self.DangerGroup
+        )
+        self.DangerGroup.addSettingCard(self.resetButtonCard)      
         
         # [ 개인 설정 ]
-        self.personalGroup = SettingCardGroup( self.tr('Personalization'), self.scrollWidget )
+        self.PersonalGroup = SettingCardGroup( self.tr('Personalization'), self.scrollWidget )
         # 테마 선택
         self.themeCard = OptionsSettingCard(
             cfg.themeMode,  # 현재 테마
@@ -180,7 +190,7 @@ class SettingInterface(ScrollArea):
             texts=[
                 self.tr('Light'), self.tr('Dark'), self.tr('Use system setting')
             ],
-            parent=self.personalGroup
+            parent=self.PersonalGroup
         )
         # # 인터페이스 확대/축소
         # self.zoomCard = OptionsSettingCard(
@@ -201,7 +211,7 @@ class SettingInterface(ScrollArea):
             self.tr('Language'),  
             self.tr('Set your preferred language'),  
             texts=['Korean', 'English', self.tr('Use system setting')],  
-            parent=self.personalGroup
+            parent=self.PersonalGroup
         )
 
         # [ 앱 정보 ]
@@ -251,8 +261,7 @@ class SettingInterface(ScrollArea):
         """ 설정 인터페이스 전체 위젯 초기화 """
         self.resize(1000, 800)  # 창 크기
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 가로 스크롤 비활성화
-        # self.setViewportMargins(0, 80, 0, 20)   # 뷰포트 여백
-        self.setViewportMargins(0, 0, 0, 0)   # 뷰포트 여백
+        self.setViewportMargins(0, 80, 0, 20)   # 뷰포트 여백
         self.setWidget(self.scrollWidget)       # 스크롤 위젯
         self.setWidgetResizable(True)           # 창 크기 변경 허용
         self.setObjectName('settingInterface')  # 객체 이름 설정
@@ -286,9 +295,10 @@ class SettingInterface(ScrollArea):
         self.ActuatorSettingGroup.addSettingCard(self.tempSpeedSettingCard)   # [Actu] 액추에이터 임시 속도
         self.ActuatorSettingGroup.addSettingCard(self.bwdLimitSettingCard)    # [Actu] 액추에이터 후진 제한 위치
         self.ActuatorSettingGroup.addSettingCard(self.fwdLimitSettingCard)    # [Actu] 액추에이터 전진 제한 위치
-        self.personalGroup.addSettingCard(self.themeCard)          # [Personal] "테마" 선택
+        self.DangerGroup.addSettingCard(self.resetButtonCard)      # [Danger]
+        self.PersonalGroup.addSettingCard(self.themeCard)          # [Personal] "테마" 선택
         # self.personalGroup.addSettingCard(self.zoomCard)           # [Personal] "확대/축소" 선택
-        self.personalGroup.addSettingCard(self.languageCard)       # [Personal] "언어" 선택
+        self.PersonalGroup.addSettingCard(self.languageCard)       # [Personal] "언어" 선택
         self.aboutGroup.addSettingCard(self.helpCard)              # [About] "도움말" 카드
 
         # 그룹 -> 레이아웃
@@ -298,7 +308,8 @@ class SettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.JogSettingGroup)    # [JOG]
         self.expandLayout.addWidget(self.TestSettingGroup)   # [Test]
         self.expandLayout.addWidget(self.ActuatorSettingGroup) # [Actu]
-        self.expandLayout.addWidget(self.personalGroup)      # [Personal]
+        self.expandLayout.addWidget(self.DangerGroup)        # [Danger]
+        self.expandLayout.addWidget(self.PersonalGroup)      # [Personal]
         self.expandLayout.addWidget(self.aboutGroup)         # [About]
 
         
@@ -321,11 +332,14 @@ class SettingInterface(ScrollArea):
         """ 시그널과 슬롯 연결 """
         cfg.appRestartSig.connect(self.__showRestartTooltip)  # 설정 업데이트 후 재시작 알림 표시
 
-        # Search 버튼 이벤트 연결
+        # [Board]
         self.searchBtnCard.clicked.connect(self.__searchPorts)
         self.connectBtnCard.clicked.connect(self.__onConnectClicked)
         
-        # "개인 설정" 관련
+        # [Danger]
+        self.resetButtonCard.clicked.connect(self.__onResetClicked)
+        
+        # [Personal]
         cfg.themeChanged.connect(setTheme)  # 테마 변경 시 테마 적용,
 
     
@@ -363,3 +377,14 @@ class SettingInterface(ScrollArea):
         """ 테스트 실행 버튼 클릭 이벤트 """
         testCount = self.testCountInput.text()
         print(f"Running test with count: {testCount}")
+        
+    
+    def __onResetClicked(self):
+        """ Reset 버튼 클릭 시 호출 """
+        # Add logic here to reset settings to their default values
+        print("Settings have been reset to default values.")
+        # Example: Resetting certain settings to default values
+        cfg.themeMode.setValue("Light")  # Reset theme
+        cfg.language.setValue("Korean")  # Reset language
+        cfg.port.setValue("None")  # Reset selected port
+        # You can add additional resets for other settings

@@ -34,7 +34,7 @@ class TestInterface(ScrollArea):
         self.portSelectionLayout.setSpacing(10)
 
         # "Test" 라벨
-        self.testLabel = QLabel(self.tr("Testing"), self.portSelectionWidget)
+        self.testLabel = QLabel(self.tr("Testing"))
         self.testLabel.setObjectName("testLabel")
         self.testLabel.setFixedHeight(50)
         self.portSelectionLayout.addWidget(self.testLabel)
@@ -90,12 +90,14 @@ class TestInterface(ScrollArea):
 
     def __initWidget(self):
         """테스트 인터페이스 전체 위젯 초기화"""
+        # self.testLabel.move(36, 30)
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
         self.setObjectName("testInterface")
+        
 
     def apply_styles(self):
         """QSS 스타일 적용"""
@@ -118,10 +120,10 @@ class TestInterface(ScrollArea):
         cardLayout.setSpacing(12)
 
         # 테스트 카운트 라벨
-        testLabel = QLabel("0", testCard)
-        testLabel.setAlignment(Qt.AlignCenter)
-        testLabel.setObjectName("testCardLabel")  # 스타일링에 사용할 이름 설정
-        cardLayout.addWidget(testLabel)
+        testCountLabel = QLabel("0", testCard)
+        testCountLabel.setAlignment(Qt.AlignCenter)
+        testCountLabel.setObjectName("testCardLabel")  # 스타일링에 사용할 이름 설정
+        cardLayout.addWidget(testCountLabel)
 
         # 버튼 레이아웃
         buttonLayout = QHBoxLayout()
@@ -152,8 +154,8 @@ class TestInterface(ScrollArea):
         cardLayout.addLayout(buttonLayout)
 
         # 버튼 동작 설정
-        startButton.clicked.connect(lambda: self.onTestStart(testLabel))
-        ResetButton.clicked.connect(lambda: self.onTestStop(testLabel))
+        startButton.clicked.connect(lambda: self.onTestStart(testCountLabel))
+        ResetButton.clicked.connect(lambda: self.onTestStop(testCountLabel))
         deleteButton.clicked.connect(lambda: self.deleteTestTemplate(testCard))
 
         # 템플릿 레이아웃에 카드 추가

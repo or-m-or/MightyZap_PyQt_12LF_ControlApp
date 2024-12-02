@@ -1,12 +1,12 @@
 /* Main scroll widget background style */
 TestingInterface, #scrollWidget {
-    background-color: #f9f9f9;
+    background-color: transparent;
 }
 
 /* ScrollArea styling */
 QScrollArea {
     border: none;
-    background-color: #f9f9f9;
+    background-color: transparent; /* #f9f9f9 */
 }
 
 /* Label styling */
