@@ -1,20 +1,30 @@
 {
     "BoardSetting": {
-        "Baudrate": "9600",
-        "Port": "None"
+        "Baudrate": "9600"
     },
     "Material": {
         "AcrylicBlurRadius": 15
     },
+    "Actuator": {
+        "BackwardLimit": 0,
+        "ForwardLimit": 3684,
+        "GlobalSpeed": 1023,
+        "TempSpeed": 1023
+    },
     "MainWindow": {
         "DpiScale": "Auto",
-        "Language": "en_US"
+        "Language": "Auto"
     },
     "Jog": {
-        "RangeValue": 4095
+        "Position1": 1000,
+        "Position2": 2000,
+        "RangeValue": 0
+    },
+    "Test": {
+        "PushCounts": 3
     },
     "QFluentWidgets": {
         "ThemeColor": "#ff009faa",
-        "ThemeMode": "Dark"
+        "ThemeMode": "Light"
     }
 }

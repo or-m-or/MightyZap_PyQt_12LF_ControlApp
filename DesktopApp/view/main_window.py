@@ -19,9 +19,9 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 from view.settings_interface import SettingInterface
 from view.testing_interface import TestInterface
-from common.signal_bus import signalBus
-from common.translator import Translator
-from common.config import cfg
+from core.signal_bus import signalBus
+from core.translator import Translator
+from core.config import cfg
 
 
 class Widget(QFrame):
@@ -50,9 +50,12 @@ class MainWindow(FluentWindow):
         self.themeListener = SystemThemeListener(self)
         
         # 서브 인터페이스 생성
-        self.homeInterface = Widget('Home', self)
-        self.TestInterface = TestInterface(self) # Widget('Folder Interface', self)
-        self.settingInterface = SettingInterface(self) # Widget('Setting Interface', self)
+        # self.homeInterface = Widget('Home', self)
+        self.settingInterface = SettingInterface(self)
+        self.TestInterface = TestInterface(self.settingInterface)
+        
+        # Signal 연결
+        self.connectSignals()
         
         # UI에서 샘플 카드 화면전환/ 사용자 상호작용
         self.connectSignalToSlot()
@@ -63,15 +66,19 @@ class MainWindow(FluentWindow):
         # start theme listener
         self.themeListener.start()
         
+    def connectSignals(self):
+        """ Signal 연동 """
+        # SettingInterface에서 devicesUpdated 시그널 연결
+        signalBus.devicesUpdated.connect(self.TestInterface.updateDeviceList)
         
     def connectSignalToSlot(self):
         # signalBus.switchToSampleCard.connect(self.switchToSample)
-        ...
+        pass
         
     def initNavigation(self):
         """ 네비게이션 인터페이스 초기화 및 항목 추가 """
-        t = Translator()
-        self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('Home'))  # 홈 인터페이스                
+        # t = Translator()
+        # self.addSubInterface(self.homeInterface, FIF.HOME, self.tr('Home'))  # 홈 인터페이스                
         self.addSubInterface(self.TestInterface, FIF.PLAY, self.tr('Testing'))        
         self.navigationInterface.addSeparator()  # 구분선 추가
         self.addSubInterface(self.settingInterface, FIF.SETTING, self.tr('Setup')) # 설정 인터페이스
@@ -114,12 +121,4 @@ class MainWindow(FluentWindow):
     def _onThemeChangedFinished(self):
         super()._onThemeChangedFinished()
         
-
-    # def switchToSample(self, routeKey, index):
-    #     """ switch to sample """
-    #     interfaces = self.findChildren(GalleryInterface)
-    #     for w in interfaces:
-    #         if w.objectName() == routeKey:
-    #             self.stackedWidget.setCurrentWidget(w, False)
-    #             w.scrollToCard(index)
 
