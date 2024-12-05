@@ -38,6 +38,7 @@ from qfluentwidgets import (
     BodyLabel, 
     ListWidget,
     qconfig,
+    FluentIcon,
     FluentIcon as FIF
 ) 
 from core.config import cfg, setup_logger, HELP_URL
@@ -282,10 +283,12 @@ class SettingInterface(ScrollArea):
     def __initWidget(self):
         """ 설정 인터페이스 전체 위젯 초기화 """
         self.resize(1000, 800)  # 창 크기
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 가로 스크롤 비활성화
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 가로 스크롤 비활성화
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setViewportMargins(0, 80, 0, 20)   # 뷰포트 여백
         self.setWidget(self.scrollWidget)       # 스크롤 위젯
         self.setWidgetResizable(True)           # 창 크기 변경 허용
+        
         self.setObjectName('settingInterface')  # 객체 이름 설정
 
         # 스타일시트 적용
@@ -401,6 +404,11 @@ class SettingInterface(ScrollArea):
             MessageBox('Error', "No devices are selected. Tap the Search button and select the device you want to connect to first.", self).exec()  # MessageBox 표시
             return
         port = match.group(1)
+        
+        # 모든 기기가 이미 연결된 경우 알림 표시
+        if len(self.actuators) >= 2:
+            MessageBox('Notice', "All devices are already connected.", self).exec()
+            return
         
         try:
             serial_obj = serial.Serial(port, baud, timeout=0.2)
@@ -558,3 +566,13 @@ class SettingInterface(ScrollArea):
         """ 현재 연결된 장치 목록 반환(액추에이터 객체) """
         return [act for act in self.actuators]
     
+    def __showFlyout(self, message):
+        """Flyout 알림 표시"""
+        Flyout.create(
+            icon=FluentIcon.INFO,
+            title="Alert", # Notification
+            content=message,
+            target=self.scrollWidget,
+            parent=self,
+            isClosable=True,
+        )

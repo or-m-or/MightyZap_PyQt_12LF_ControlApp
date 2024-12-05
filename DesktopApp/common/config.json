@@ -6,8 +6,8 @@
         "AcrylicBlurRadius": 15
     },
     "Actuator": {
-        "BackwardLimit": 0,
-        "ForwardLimit": 3684,
+        "BackwardLimit": 1,
+        "ForwardLimit": 3690,
         "GlobalSpeed": 1023,
         "TempSpeed": 1023
     },
