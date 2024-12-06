@@ -44,13 +44,12 @@ class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
         self.initWindow()  # 윈도우 초기화
-        self.setWindowTitle("Actuator Controller")
+        self.setWindowTitle("Actuator Tester")
         
-        # 시스템 테마 리스너
-        self.themeListener = SystemThemeListener(self)
+        # 시스템 테마 리스너 : 테마 변경 기능 필요 시 주석해제
+        # self.themeListener = SystemThemeListener(self)
         
         # 서브 인터페이스 생성
-        # self.homeInterface = Widget('Home', self)
         self.settingInterface = SettingInterface(self)
         self.TestInterface = TestInterface(self.settingInterface)
         
@@ -63,8 +62,8 @@ class MainWindow(FluentWindow):
         self.initNavigation()  # 네비게이션 초기화
         self.splashScreen.finish()
         
-        # start theme listener
-        self.themeListener.start()
+        # 테마 리스터 시작 : 테마 변경 기능 필요 시 주석해제
+        # self.themeListener.start()
         
     def connectSignals(self):
         """ Signal 연동 """
@@ -114,8 +113,8 @@ class MainWindow(FluentWindow):
     
     def closeEvent(self, e):
         """ 윈도우 닫힐 때 호출, 리소스 삭제 """
-        self.themeListener.terminate()
-        self.themeListener.deleteLater()
+        # self.themeListener.terminate()
+        # self.themeListener.deleteLater()
         super().closeEvent(e)
 
     def _onThemeChangedFinished(self):

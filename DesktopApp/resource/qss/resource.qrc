@@ -2,12 +2,10 @@
     <qresource prefix="/resource/qss">
         <file>../images/shoko.png</file>
 
-        <file>dark/home_interface.qss</file>
         <file>dark/setting_interface.qss</file>
         <file>dark/navigation_view_interface.qss</file>
         <file>dark/testing_interface.qss</file>
 
-        <file>light/home_interface.qss</file>
         <file>light/setting_interface.qss</file>
         <file>light/navigation_view_interface.qss</file>
         <file>light/testing_interface.qss</file>

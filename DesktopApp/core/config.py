@@ -74,16 +74,16 @@ class Config(QConfig):
     qconfig.save(cfg) # 저장
     """    
     # Baudrate 설정 (OptionsConfigItem으로 고정 옵션 제공)
-    baudrate = OptionsConfigItem(
-        "BoardSetting",  # 설정 그룹 이름
-        "Baudrate",  # 설정 키 이름
-        "9600",  # 기본값: 9600
-        OptionsValidator(["9600", "19200", "57600", "115200"]),  # 허용 값
-        restart=False
-    )
+    # baudrate = OptionsConfigItem(
+    #     "BoardSetting",  # 설정 그룹 이름
+    #     "Baudrate",  # 설정 키 이름
+    #     "9600",  # 기본값: 9600
+    #     OptionsValidator(["9600", "19200", "57600", "115200"]),  # 허용 값
+    #     restart=False
+    # )
     
      # 조그(액추에이터) 이동 관련
-    rangeValue = RangeConfigItem("Jog", "RangeValue", 0, RangeValidator(0, 4095))
+    # rangeValue = RangeConfigItem("Jog", "RangeValue", 0, RangeValidator(0, 4095))
     position1 = RangeConfigItem("Jog", "Position1", 0, RangeValidator(0, 4095))
     position2 = RangeConfigItem("Jog", "Position2", 0, RangeValidator(0, 4095))
     
@@ -104,12 +104,12 @@ class Config(QConfig):
         RangeValidator(0, 1023)  # 범위: 0~1023
     )
 
-    temp_speed = RangeConfigItem(
-        "Actuator", 
-        "TempSpeed", 
-        1023, 
-        RangeValidator(0, 1023)  # 범위: 0~1023
-    )
+    # temp_speed = RangeConfigItem(
+    #     "Actuator", 
+    #     "TempSpeed", 
+    #     1023, 
+    #     RangeValidator(0, 1023)  # 범위: 0~1023
+    # )
 
     bwd_limit = RangeConfigItem(
         "Actuator", 
@@ -166,5 +166,7 @@ EN_SUPPORT_URL = "https://qfluentwidgets.com/price/"    # 영어 지원 URL
 
 # 설정 객체 생성
 cfg = Config()
-cfg.themeMode.value = Theme.AUTO  # 테마 모드를 자동으로 설정
+# cfg.themeMode.value = Theme.AUTO  # 테마 모드를 자동으로 설정 필요시 주석 해제
+cfg.themeMode.value = Theme.LIGHT
+
 qconfig.load('common/config.json', cfg)  # 설정 파일에서 설정 로드

@@ -1,3 +1,6 @@
+"""
+테스팅 화면에 기본 설정 기능 추가
+"""
 import resource_rc
 import serial, re
 from serial.tools import list_ports
@@ -135,7 +138,7 @@ class TestInterface(ScrollArea):
         countLabel = QLabel("0", testCardWidget)
         countLabel.setAlignment(Qt.AlignCenter)
         font = QFont()
-        font.setPointSize(50)  # 숫자를 크게 표시
+        font.setPointSize(70)  # 숫자를 크게 표시
         font.setBold(True)
         countLabel.setFont(font)
         cardLayout.addWidget(countLabel, alignment=Qt.AlignTop)
